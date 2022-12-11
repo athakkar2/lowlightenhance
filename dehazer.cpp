@@ -29,7 +29,7 @@ void darkChannel(Mat &img, Mat &darkdst) {
   erode(dc, darkdst, kernel);
 }
 
-void AtmLight(Mat &img, Mat &Adst, Mat &dark) {
+void AtmLight(Mat &img, float A[], Mat &dark) {
   int imgsz = img.rows * img.cols;
   int numpx = int(max(floor(imgsz / 1000), 1.0));
   Mat darkvec, imvec;
@@ -45,12 +45,22 @@ void AtmLight(Mat &img, Mat &Adst, Mat &dark) {
   indices = argsort(darkvec1);
   auto iterator = indices.begin();
   indices.erase(iterator, iterator + imgsz - numpx);
+
+  float atmsum[3] = { };
+  for(int i = 1; i < numpx; i++){
+    for(int j = 0; j < 3; j++){
+      atmsum[j] = atmsum[j] + imvec.at<Vec3b>(indices[i])[j];
+    }
+  }
+
+  for (int z = 0; z < 3; z++){A[z] = atmsum[z] / numpx;}
 }
 
 int main(int argc, char **argv) {
-  Mat img = imread("low.png");
+  Mat img = imread("Low.png");
   bitwise_not(img, img);
-  Mat darkdst, A;
+  Mat darkdst;
+  float A[3] = {};
   darkChannel(img, darkdst);
   AtmLight(img, A, darkdst);
   namedWindow("Display Image OG", WINDOW_AUTOSIZE);
