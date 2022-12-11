@@ -35,7 +35,6 @@ void AtmLight(Mat &img, float A[], Mat &dark) {
   Mat darkvec, imvec;
   darkvec = dark.reshape(0, imgsz);
   imvec = img.reshape(3, imgsz);
-  darkvec.convertTo(darkvec, CV_32FC1);
   vector<float> darkvec1(darkvec.rows * darkvec.cols * darkvec.channels());
   if (darkvec.isContinuous()) {
     darkvec1.assign(darkvec.data,
@@ -46,23 +45,30 @@ void AtmLight(Mat &img, float A[], Mat &dark) {
   auto iterator = indices.begin();
   indices.erase(iterator, iterator + imgsz - numpx);
 
-  float atmsum[3] = { };
-  for(int i = 1; i < numpx; i++){
-    for(int j = 0; j < 3; j++){
+  float atmsum[3] = {};
+  for (int i = 1; i < numpx; i++) {
+    for (int j = 0; j < 3; j++) {
       atmsum[j] = atmsum[j] + imvec.at<Vec3b>(indices[i])[j];
     }
   }
 
-  for (int z = 0; z < 3; z++){A[z] = atmsum[z] / numpx;}
+  for (int z = 0; z < 3; z++) {
+    A[z] = atmsum[z] / (numpx * 255);
+  }
 }
 
 int main(int argc, char **argv) {
   Mat img = imread("Low.png");
+  Mat imgCopy;
   bitwise_not(img, img);
+  img.convertTo(imgCopy, -1, 1.0 / 255, 0);
   Mat darkdst;
+  // darkdst.convertTo(darkdst, CV_32FC3, 1.0 / 255);
   float A[3] = {};
   darkChannel(img, darkdst);
   AtmLight(img, A, darkdst);
+  // img.convertTo(img, CV_8UC3, 255);
+  // darkdst.convertTo(darkdst, CV_8UC3, 255);
   namedWindow("Display Image OG", WINDOW_AUTOSIZE);
   imshow("Display Image OG", img);
   namedWindow("Display Image", WINDOW_AUTOSIZE);
